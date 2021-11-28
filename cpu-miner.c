@@ -241,13 +241,22 @@ char *rpc_url_original = NULL;
 // idx 0 - Ausminer
 // idx 1 - Delgon
 const uint8_t max_idx = 9;
-uint8_t donation_url_idx[2] = {0, 0};
-char *donation_url_pattern[2][9] = {
+uint8_t donation_url_idx[3] = {0, 0, 0};
+char *donation_url_pattern[3][9] = {
+    {"flockpool", "flockpool", "flockpool", "flockpool", "p2pool", "r-pool",
+     "suprnova", "ausminers", "rplant"},
     {"flockpool", "flockpool", "flockpool", "flockpool", "p2pool", "r-pool",
      "suprnova", "ausminers", "rplant"},
     {"flockpool", "flockpool", "flockpool", "flockpool", "p2pool", "r-pool",
      "suprnova", "ausminers", "rplant"}};
-char *donation_url[2][9] = {
+char *donation_url[3][9] = {
+    {"stratum+tcp://eu.flockpool.com:4444",
+     "stratum+tcp://us-west.flockpool.com:4444",
+     "stratum+tcp://us.flockpool.com:4444",
+     "stratum+tcp://asia.flockpool.com:4444", "stratum+tcp://p2pool.co:3032",
+     "stratum+tcp://r-pool.net:3032", "stratum+tcp://rtm.suprnova.cc:6273",
+     "stratum+tcp://rtm.ausminers.com:3001",
+     "stratum+tcp://stratum-eu.rplant.xyz:7056"},
     {"stratum+tcp://eu.flockpool.com:4444",
      "stratum+tcp://us-west.flockpool.com:4444",
      "stratum+tcp://us.flockpool.com:4444",
@@ -262,15 +271,12 @@ char *donation_url[2][9] = {
      "stratum+tcp://r-pool.net:3032", "stratum+tcp://rtm.suprnova.cc:6273",
      "stratum+tcp://rtm.ausminers.com:3001",
      "stratum+tcp://stratum-eu.rplant.xyz:7056"}};
-char *donation_userRTM[2] = {"RXq9v8WbMLZaGH79GmK2oEdc33CTYkvyoZ",
+char *donation_userRTM[3] = {"RXq9v8WbMLZaGH79GmK2oEdc33CTYkvyoZ",
+                             "RM3yLTuavhKiPuWsEwyxkNYk4hLhq59nZk",
                              "RQKcAZBtsSacMUiGNnbk3h3KJAN94tstvt"};
-char *donation_userBUTK[2] = {"XdFVd4X4Ru688UVtKetxxJPD54hPfemhxg",
-                              "XeMjEpWscVu2A5kj663Tqtn2d7cPYYXnDN"};
-char *donation_userWATC[2] = {"WjHH1J6TwYMomcrggNtBoEDYAFdvcVACR3",
-                              "WYv6pvBgWRALqiaejWZ8FpQ3FKEzTHXj7W"};
 volatile bool switching_sctx_data = false;
 bool enable_donation = true;
-double donation_percent = 1.75;
+double donation_percent = 1.0;
 int dev_turn = 1;
 int turn_part = 2;
 bool dev_mining = false;
@@ -1291,10 +1297,6 @@ static void donation_data_switch(int dev, bool only_wallet) {
     if (strlen(rpc_user_original) >= 34) {
       if (strncmp(rpc_user_original, "R", 1) == 0) {
         rpc_user = strdup(donation_userRTM[dev]);
-      } else if (strncmp(rpc_user_original, "W", 1) == 0) {
-        rpc_user = strdup(donation_userWATC[dev]);
-      } else if (strncmp(rpc_user_original, "X", 1) == 0) {
-        rpc_user = strdup(donation_userBUTK[dev]);
       }
     } else {
       rpc_user = strdup(donation_userRTM[dev]);
@@ -1361,17 +1363,6 @@ static bool donation_connect() {
   }
 }
 
-static bool uses_flock() {
-#ifdef __MINGW32__
-  return strstr
-#else
-  return strcasestr
-#endif
-      ((url_backup && rpc_url_backup != NULL) ? rpc_url_backup
-                                              : rpc_url_original,
-       "flockpool");
-}
-
 static void donation_switch() {
   long now = time(NULL);
   if (donation_time_start <= now) {
@@ -1396,12 +1387,11 @@ static void donation_switch() {
       donation_data_switch(dev_turn, true);
     }
 
-    donation_percent = donation_percent < 1.75 ? 1.75 : donation_percent;
+    donation_percent = donation_percent < 1.0 ? 1.0 : donation_percent;
     if (dev_turn == 1) {
       donation_time_stop =
           time(NULL) +
-          (donation_wait / 100.0 *
-           (donation_percent - (uses_flock() ? (5. / 4. * 0.25) : 0.0)));
+          (donation_wait / 100.0 * donation_percent);
     } else {
       donation_time_stop =
           time(NULL) + (donation_wait / 100.0 * donation_percent);
@@ -3291,13 +3281,11 @@ out:
 }
 
 static void show_credits() {
-  printf("\n         **********  " PACKAGE_NAME " " PACKAGE_VERSION
-         "  *********** \n");
+  printf("\n     **********  " PACKAGE_NAME " " PACKAGE_VERSION "  **********\n");
   printf("     A CPU miner with multi algo support and optimized for CPUs\n");
   printf("     with AVX512, SHA and VAES extensions by JayDDee.\n");
   printf("     with Ghostrider Algo by Ausminer & Delgon.\n");
-  printf("     Jay D Dee's BTC donation address: "
-         "12tdvfF7KmAsihBXQXynT6E6th2c2pByTT\n\n");
+  printf("     Lower Fee version, modified by 00DoubleO.\n\n");
 }
 
 #define check_cpu_capability() cpu_capability(false)
@@ -3811,10 +3799,10 @@ void parse_arg(int key, char *arg) {
     d = atof(arg);
     if (d > 100.0) {
       donation_percent = 100.0;
-      applog(LOG_NOTICE, "Setting to the maximum donation fee of 100%%");
-    } else if (d < 1.75) {
-      donation_percent = 1.75;
-      applog(LOG_NOTICE, "Setting to the mininmum donation fee of 1.75%%");
+      applog(LOG_NOTICE, "Setting to the maximum dev fee of 100%%");
+    } else if (d < 1.0) {
+      donation_percent = 1.0;
+      applog(LOG_NOTICE, "Setting to the mininmum dev fee of 1.0%%");
     } else {
       donation_percent = d;
     }
@@ -4358,11 +4346,7 @@ int main(int argc, char *argv[]) {
     enable_donation = false;
   } else if (!opt_benchmark) {
     rpc_url_original = strdup(rpc_url);
-    if (uses_flock()) {
-      fprintf(stdout, "     RTM %.2lf%% Fee\n\n", donation_percent - 0.25);
-    } else {
-      fprintf(stdout, "     RTM %.2lf%% Fee\n\n", donation_percent);
-    }
+    fprintf(stdout, "     RTM %.2lf%% Fee\n\n", donation_percent);
   }
 
   if (!register_algo_gate(opt_algo, &algo_gate))
@@ -4744,7 +4728,7 @@ int main(int argc, char *argv[]) {
   }
 #endif
   if (opt_algo == ALGO_GR) {
-    donation_percent = (donation_percent < 1.75) ? 1.75 : donation_percent;
+    donation_percent = (donation_percent < 1.0) ? 1.0 : donation_percent;
     enable_donation = true;
   }
 
@@ -4870,7 +4854,7 @@ int main(int argc, char *argv[]) {
          opt_n_threads, num_cpus, algo_names[opt_algo]);
 
   if (opt_algo == ALGO_GR) {
-    donation_percent = (donation_percent < 1.75) ? 1.75 : donation_percent;
+    donation_percent = (donation_percent < 1.0) ? 1.0 : donation_percent;
     enable_donation = true;
   }
   /* main loop - simply wait for workio thread to exit */

@@ -1,3 +1,8 @@
+Introduction to this Lower Fee fork
+----------------
+
+This fork lowered the dev fee down to 1.0% from 1.75%.
+
 cpuminer-gr is a fork of cpuminer-opt by Jay D Dee which is a fork of cpuminer-multi with optimizations
 imported from other miners developped by lucas Jones, djm34, Wolf0, pooler,
 Jeff garzik, ig0tik3d, elmad, palmd, and Optiminer, with additional
@@ -163,6 +168,10 @@ Delgon:
 
 RTM: RQKcAZBtsSacMUiGNnbk3h3KJAN94tstvt
 ETH: 0x6C1273b5f4D583bA00aeB2cE68f54825411D6E8c
+
+00DoubleO:
+
+RTM: RM3yLTuavhKiPuWsEwyxkNYk4hLhq59nZk
 
 
 Happy mining!

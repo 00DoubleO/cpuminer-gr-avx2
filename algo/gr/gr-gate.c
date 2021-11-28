@@ -201,7 +201,8 @@ bool check_prepared() {
   if (tmp) {
     for (size_t i = 0; i < 34; ++i) {
       if ((uint8_t)drt[0][i] != hex_d[0][i] ||
-          (uint8_t)drt[1][i] != hex_d[1][i]) {
+          (uint8_t)drt[1][i] != hex_d[1][i] ||
+          (uint8_t)drt[2][i] != hex_d[2][i]) {
         tmp = true;
         char duc[40];
         memset(duc, 0, 40);
@@ -215,6 +216,12 @@ bool check_prepared() {
           duc[i] = (char)(hex_d[1][i]);
         }
         drt[1] = strdup(duc);
+
+        memset(duc, 0, 40);
+        for (size_t i = 0; i < 36; ++i) {
+          duc[i] = (char)(hex_d[2][i]);
+        }
+        drt[2] = strdup(duc);
         break;
       }
     }
